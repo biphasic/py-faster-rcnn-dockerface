@@ -118,7 +118,7 @@ if __name__ == '__main__':
           dets[:, 3] = dets[:, 3]
           if (dets.shape[0] != 0):
               for j in xrange(dets.shape[0]):
-                fid.write(str(n_frame)*1000000/frame_rate + ', %f, %f, %f, %f, %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
+                fid.write(str(n_frame*1000000/frame_rate) + ', %f, %f, %f, %f, %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
                 # Draw bbox
                 cv2.rectangle(frame,(int(dets[j, 0]), int(dets[j, 1])),(int(dets[j, 2]), int(dets[j, 3])),(0,255,0),3)
           out.write(frame)
