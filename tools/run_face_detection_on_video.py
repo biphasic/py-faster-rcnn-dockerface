@@ -27,6 +27,7 @@ def parse_args():
             choices=NETS.keys(), default='vgg16')
   parser.add_argument('--video', dest='video_path', help='Path of video')
   parser.add_argument('--output_string', dest='output_string', help='String appended to output file')
+  parser.add_argument('--output_path', dest='output_path', help='where to write annotated stuff')
   parser.add_argument('--conf_thresh', dest='conf_thresh', help='Confidence threshold for the detections, float from 0 to 1', default=0.85, type=float)
 
   args = parser.parse_args()
@@ -51,6 +52,10 @@ if __name__ == '__main__':
     raise IOError(('{:s} not found.\nDid you run ./data/script/'
              'fetch_faster_rcnn_models.sh?').format(caffemodel))
 
+  print args.video_path
+  if not os.path.exists(args.video_path):
+    raise IOError('Video does not exist.')
+
   if args.cpu_mode:
     caffe.set_mode_cpu()
   else:
@@ -62,21 +67,14 @@ if __name__ == '__main__':
   print '\n\nLoaded network {:s}'.format(caffemodel)
 
   # LOAD DATA FROM VIDEO
-  data_dir = 'data/video/'
-  out_dir = 'output/video/'
-
-  if not os.path.exists(out_dir):
-    os.makedirs(out_dir)
-
-  dets_file_name = os.path.join(out_dir, 'video-det-fold-%s.txt' % args.output_string)
-  fid = open(dets_file_name, 'w')
+  #data_dir = 'data/video/'
+  out_dir = args.output_path # 'output/video/'
 
   CONF_THRESH = args.conf_thresh
   NMS_THRESH = 0.15
 
-  print args.video_path
-  if not os.path.exists(args.video_path):
-    print 'Video does not exist.'
+  dets_file_name = os.path.join(out_dir, '%s-faster-rcnn-annotations.csv' % args.output_string)
+  fid = open(dets_file_name, 'w')
 
   video = cv2.VideoCapture(args.video_path)
 
@@ -86,8 +84,10 @@ if __name__ == '__main__':
 
   # Define the codec and create VideoWriter object
   # TODO: The videos I am using are 30fps, but you should programmatically get this.
+  frame_rate = 25.0
   fourcc = cv2.VideoWriter_fourcc(*'MJPG')
-  out = cv2.VideoWriter('output/video/output-%s.avi' % args.output_string,fourcc, 30.0, (width, height))
+  out_path =  args.output_path + '/%s-faster-rcnn.avi' % args.output_string
+  out = cv2.VideoWriter(out_path, fourcc, frame_rate, (width, height))
 
   n_frame = 1
   # TODO: add time function per frame.
@@ -118,7 +118,7 @@ if __name__ == '__main__':
           dets[:, 3] = dets[:, 3]
           if (dets.shape[0] != 0):
               for j in xrange(dets.shape[0]):
-                fid.write(str(n_frame) + ' %f %f %f %f %f\n' % (dets[j, 0], dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
+                fid.write(str(n_frame) + ' %f, %f, %f, %f, %f\n' % (dets[j, 0]*1000000/frame_rate, dets[j, 1], dets[j, 2], dets[j, 3], dets[j, 4]))
                 # Draw bbox
                 cv2.rectangle(frame,(int(dets[j, 0]), int(dets[j, 1])),(int(dets[j, 2]), int(dets[j, 3])),(0,255,0),3)
           out.write(frame)
